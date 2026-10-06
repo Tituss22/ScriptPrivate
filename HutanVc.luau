@@ -28,7 +28,7 @@ local AutoExecuteURL = ""
 
 LocalPlayer.Chatted:Connect(function(msg)
     if string.lower(msg) == "!rejoin" then
-        if queue_on_teleport and AutoExecuteURL ~= "" then
+        if queue_on_teleport and AutoExecuteURL ~= "https://raw.githubusercontent.com/Tituss22/ScriptPrivate/refs/heads/main/HutanVc.luau" then
             queue_on_teleport('loadstring(game:HttpGet("' .. AutoExecuteURL .. '"))()')
         end
         pcall(function()
