@@ -20,7 +20,7 @@ end
 print("Akses Diterima. Selamat datang, " .. player.Name .. "!")
 
 -- ====================================================================
--- 🌲 HUTAN VOICE CHAT - MINI PREMIUM HUB (V27 - ULTIMATE FIX)
+-- 🌲 HUTAN VOICE CHAT - MINI PREMIUM HUB (V28 - GREEN THEME & CART FIX)
 -- ====================================================================
 
 local CoreGui = game:GetService("CoreGui")
@@ -40,12 +40,12 @@ local networkPaused
 -- 📱 Deteksi Perangkat (PC atau HP) & Skala UI Dinamis
 local isMobile = UserInputService.TouchEnabled
 
-local MAIN_W = isMobile and 165 or 200
-local MAIN_H = isMobile and 340 or 420
-local SUB_W = isMobile and 215 or 260
+local MAIN_W = isMobile and 175 or 210
+local MAIN_H = isMobile and 350 or 430
+local SUB_W = isMobile and 220 or 270
 local TITLE_SIZE = isMobile and 13 or 16
 local TEXT_SIZE = isMobile and 10 or 12
-local BTN_H = isMobile and 28 or 32
+local BTN_H = isMobile and 30 or 34
 
 -- ==========================================
 -- 🔄 SISTEM AUTO REJOIN CHAT (!rejoin) & QUEUE ON TELEPORT
@@ -110,6 +110,44 @@ local function MakeDraggable(topbarobject, object)
 end
 
 -- ==========================================
+-- 🛸 SMART TELEPORT (TERBAWA GEROBAK/KENDARAAN)
+-- ==========================================
+local function SmartTeleport(targetCFrame)
+    pcall(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+
+        if hum and hum.Sit and hum.SeatPart then
+            local seat = hum.SeatPart
+            local vehModel = seat:FindFirstChildAncestorOfClass("Model") or seat.Parent
+            
+            if vehModel and vehModel:IsA("Model") then
+                vehModel:PivotTo(targetCFrame)
+            elseif seat.AssemblyRootPart then
+                seat.AssemblyRootPart.CFrame = targetCFrame
+            else
+                seat.CFrame = targetCFrame
+            end
+
+            if seat.AssemblyRootPart then
+                seat.AssemblyRootPart.AssemblyLinearVelocity = Vector3.zero
+                seat.AssemblyRootPart.AssemblyAngularVelocity = Vector3.zero
+            end
+        else
+            if hum then hum.Sit = false end
+            if hrp then 
+                hrp.AssemblyLinearVelocity = Vector3.zero
+                hrp.AssemblyAngularVelocity = Vector3.zero
+            end
+            task.wait(0.02)
+            char:PivotTo(targetCFrame)
+        end
+    end)
+end
+
+-- ==========================================
 -- 🎨 SETUP TAMPILAN UTAMA (PROPORSI DINAMIS)
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui")
@@ -121,8 +159,8 @@ if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("Player
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, MAIN_W, 0, MAIN_H) 
 MainFrame.Position = UDim2.new(guiCache.PosX, guiCache.OffsetX, guiCache.PosY, guiCache.OffsetY)
-MainFrame.BackgroundColor3 = Color3.fromRGB(10, 15, 12)
-MainFrame.BackgroundTransparency = 0.15 
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 16, 14)
+MainFrame.BackgroundTransparency = 0.1
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Visible = guiCache.Visible
@@ -131,16 +169,17 @@ MakeDraggable(MainFrame, MainFrame)
 
 if isMobile then
     local ToggleBtn = Instance.new("TextButton", ScreenGui)
-    ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
+    ToggleBtn.Size = UDim2.new(0, 48, 0, 48)
     ToggleBtn.Position = UDim2.new(0, 15, 0, 15)
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(10, 15, 12)
-    ToggleBtn.BackgroundTransparency = 0.2
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(12, 16, 14)
+    ToggleBtn.BackgroundTransparency = 0.15
     ToggleBtn.Text = "🌲"
-    ToggleBtn.TextSize = 25
+    ToggleBtn.TextSize = 24
     ToggleBtn.Font = Enum.Font.GothamBold
     Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
-    Instance.new("UIStroke", ToggleBtn).Color = Color3.fromRGB(0, 255, 128)
-    Instance.new("UIStroke", ToggleBtn).Thickness = 2
+    local ToggleStroke = Instance.new("UIStroke", ToggleBtn)
+    ToggleStroke.Color = Color3.fromRGB(0, 255, 128)
+    ToggleStroke.Thickness = 2
     MakeDraggable(ToggleBtn, ToggleBtn)
 
     ToggleBtn.MouseButton1Click:Connect(function()
@@ -164,8 +203,8 @@ MainStroke.Thickness = 1.5
 MainStroke.Transparency = 0.2
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Position = UDim2.new(0, 0, 0, 5)
+Title.Size = UDim2.new(1, 0, 0, 28)
+Title.Position = UDim2.new(0, 0, 0, 6)
 Title.BackgroundTransparency = 1
 Title.Text = "🌲 HUTAN VC"
 Title.TextColor3 = Color3.fromRGB(0, 255, 128)
@@ -173,28 +212,42 @@ Title.Font = Enum.Font.GothamBlack
 Title.TextSize = TITLE_SIZE
 
 local F2Hint = Instance.new("TextLabel", MainFrame)
-F2Hint.Size = UDim2.new(1, 0, 0, 15)
-F2Hint.Position = UDim2.new(0, 0, 0, 25)
+F2Hint.Size = UDim2.new(1, 0, 0, 14)
+F2Hint.Position = UDim2.new(0, 0, 0, 28)
 F2Hint.BackgroundTransparency = 1
 F2Hint.Text = isMobile and "[ Tap Logo 🌲 untuk Hide ]" or "[ Tekan F2 untuk Hide/Show ]"
-F2Hint.TextColor3 = Color3.fromRGB(150, 150, 150)
+F2Hint.TextColor3 = Color3.fromRGB(160, 160, 160)
 F2Hint.Font = Enum.Font.GothamSemibold
 F2Hint.TextSize = isMobile and 9 or 10
 
 local Container = Instance.new("Frame", MainFrame)
-Container.Size = UDim2.new(1, -20, 1, -55)
-Container.Position = UDim2.new(0, 10, 0, 45)
+Container.Size = UDim2.new(1, -16, 1, -50)
+Container.Position = UDim2.new(0, 8, 0, 44)
 Container.BackgroundTransparency = 1
-local UIListLayout = Instance.new("UIListLayout", Container)
+
+local ContainerScroll = Instance.new("ScrollingFrame", Container)
+ContainerScroll.Size = UDim2.new(1, 0, 1, 0)
+ContainerScroll.BackgroundTransparency = 1
+ContainerScroll.ScrollBarThickness = isMobile and 4 or 3
+ContainerScroll.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 128)
+ContainerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ContainerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+local UIListLayout = Instance.new("UIListLayout", ContainerScroll)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 8) 
+UIListLayout.Padding = UDim.new(0, 6) 
+
+local ContainerPadding = Instance.new("UIPadding", ContainerScroll)
+ContainerPadding.PaddingTop = UDim.new(0, 2)
+ContainerPadding.PaddingBottom = UDim.new(0, 10)
+ContainerPadding.PaddingRight = UDim.new(0, 4)
 
 local function CreateSubFrame(titleText, iconText)
     local Frame = Instance.new("Frame", MainFrame)
     Frame.Size = UDim2.new(0, SUB_W, 1, 0) 
     Frame.Position = UDim2.new(1, 10, 0, 0) 
-    Frame.BackgroundColor3 = Color3.fromRGB(10, 15, 12)
-    Frame.BackgroundTransparency = 0.15 
+    Frame.BackgroundColor3 = Color3.fromRGB(12, 16, 14)
+    Frame.BackgroundTransparency = 0.1 
     Frame.BorderSizePixel = 0
     Frame.Visible = false
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
@@ -205,7 +258,7 @@ local function CreateSubFrame(titleText, iconText)
     Stroke.Transparency = 0.2
 
     local TitleLbl = Instance.new("TextLabel", Frame)
-    TitleLbl.Size = UDim2.new(1, 0, 0, 40)
+    TitleLbl.Size = UDim2.new(1, 0, 0, 36)
     TitleLbl.BackgroundTransparency = 1
     TitleLbl.Text = iconText .. " " .. titleText
     TitleLbl.TextColor3 = Color3.fromRGB(0, 255, 128)
@@ -213,12 +266,25 @@ local function CreateSubFrame(titleText, iconText)
     TitleLbl.TextSize = TITLE_SIZE - 1
 
     local Scroll = Instance.new("ScrollingFrame", Frame)
-    Scroll.Size = UDim2.new(1, -20, 1, -50)
-    Scroll.Position = UDim2.new(0, 10, 0, 40)
+    Scroll.Size = UDim2.new(1, -16, 1, -44)
+    Scroll.Position = UDim2.new(0, 8, 0, 38)
     Scroll.BackgroundTransparency = 1
-    Scroll.ScrollBarThickness = 4
+    Scroll.ScrollBarThickness = isMobile and 5 or 4
+    Scroll.ScrollBarImageColor3 = Color3.fromRGB(0, 255, 128)
+    Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+    Scroll.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+
     local List = Instance.new("UIListLayout", Scroll)
-    List.Padding = UDim.new(0, 5)
+    List.Padding = UDim.new(0, 6)
+    List.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local Padding = Instance.new("UIPadding", Scroll)
+    Padding.PaddingTop = UDim.new(0, 2)
+    Padding.PaddingBottom = UDim.new(0, 15)
+    Padding.PaddingLeft = UDim.new(0, 2)
+    Padding.PaddingRight = UDim.new(0, 6)
 
     return Frame, Scroll
 end
@@ -232,19 +298,21 @@ local RusuhFrame, RusuhScroll = CreateSubFrame("SCRIPT RUSUH", "💥")
 -- Tambah Search Box Khusus
 local function AddSearchBox(ParentFrame, ScrollUI)
     local SearchBox = Instance.new("TextBox", ParentFrame)
-    SearchBox.Size = UDim2.new(1, -20, 0, 26)
-    SearchBox.Position = UDim2.new(0, 10, 0, 35)
-    SearchBox.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
+    SearchBox.Size = UDim2.new(1, -16, 0, 28)
+    SearchBox.Position = UDim2.new(0, 8, 0, 34)
+    SearchBox.BackgroundColor3 = Color3.fromRGB(20, 28, 22)
     SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     SearchBox.PlaceholderText = "🔍 Cari..."
     SearchBox.Font = Enum.Font.GothamSemibold
     SearchBox.TextSize = TEXT_SIZE
     SearchBox.ClearTextOnFocus = false
     Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(0, 6)
-    Instance.new("UIStroke", SearchBox).Color = Color3.fromRGB(0, 255, 128)
+    local SearchStroke = Instance.new("UIStroke", SearchBox)
+    SearchStroke.Color = Color3.fromRGB(0, 255, 128)
+    SearchStroke.Transparency = 0.4
     
-    ScrollUI.Size = UDim2.new(1, -20, 1, -75)
-    ScrollUI.Position = UDim2.new(0, 10, 0, 65)
+    ScrollUI.Size = UDim2.new(1, -16, 1, -70)
+    ScrollUI.Position = UDim2.new(0, 8, 0, 66)
 
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local search = string.lower(SearchBox.Text)
@@ -292,10 +360,10 @@ local function CloseAllSubMenus()
 end
 
 local function CreateActionBtn(name, callback)
-    local Btn = Instance.new("TextButton", Container)
+    local Btn = Instance.new("TextButton", ContainerScroll)
     Btn.Size = UDim2.new(1, 0, 0, BTN_H)
-    Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35) 
-    Btn.BackgroundTransparency = 0.2
+    Btn.BackgroundColor3 = Color3.fromRGB(24, 30, 28) 
+    Btn.BackgroundTransparency = 0.1
     Btn.Text = name
     Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Font = Enum.Font.GothamBold
@@ -317,10 +385,10 @@ end
 
 local function CreateToggle(name, callback)
     local isActive = false
-    local Btn = Instance.new("TextButton", Container)
+    local Btn = Instance.new("TextButton", ContainerScroll)
     Btn.Size = UDim2.new(1, 0, 0, BTN_H)
-    Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35) 
-    Btn.BackgroundTransparency = 0.2
+    Btn.BackgroundColor3 = Color3.fromRGB(24, 30, 28) 
+    Btn.BackgroundTransparency = 0.1
     Btn.Text = name
     Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     Btn.Font = Enum.Font.GothamBold
@@ -460,7 +528,7 @@ CreateToggle("🎹 Piano Brutal", function(state)
 end)
 
 -- ==========================================
--- 4️⃣ MENU: DECAL CHANGER PANEL (Logika Sama, Size Updated)
+-- 4️⃣ MENU: DECAL CHANGER PANEL
 -- ==========================================
 CreateActionBtn("🖼️ Decal Changer", function()
     local newState = not DecalFrame.Visible
@@ -469,10 +537,6 @@ CreateActionBtn("🖼️ Decal Changer", function()
 end)
 
 local decalIDs = { "97621188548063",  "73203534417430",  "134834185288415", "85200908630517", "103696008317336", "98665051722682",  "89005004083873", "124107644275720", "119362477766882", "135051539601314", "75286848578025", "93619525646230", "96469468149871", "95798757543814", "132520586948409", "76241030161216", "81900715746842", "123351582929503", "103862562885646", "125472981338673", "101577115252273", "92654835490452", "75581390378147", "18721138013", "119911430798876", "135868263388393", "124295306744173", "77031658616427", "122584664996512", "100820160309981", "118358344042339", "98241598594893", "124197521447164", "95998018122646", "83101670376944", "106900665401467", "93769479126128", "72356519867383", "130188260773892", "75715745507820", "90636433912832", "122417880275747", "116199329143461", "131918155427883", "107747751559949", "77235297674681", "125785962142006", "88925185923237", "121031801714770", "123863821313412", "75258599751318", "130821336565497", "100777130375279", "94562243135321", "122896214893586", "80948784549280", "93571970236375", "104793836558416", "77701784444891", "129407866418547", "129574778629018", "78301832119498", "80377728136837", "93685920524232", "98294813785358", "111993790294475", "114999584257625", "131785713219876", "120747655874184", "117851244155531", "113290406249263", "110657214265135", "94818765680364", "116447576635301", "122620216163757", "119017518926012", "139885028444737", "118155454007068", "72088247031696", "124437704839119", "138763434489459", "120483906657333", "135686248548999", "138312991524010", "89430489368537", "94578691852491", "117064019114437", "131197681382977", "73094648154127", "83998131998365", "79696264372605", "128730637019281", "102692069490375", "80301455005198", "78814293639570", "140258791380569", "115218437944820", "106613884674871", "108559261107558", "134941546524030", "81632053602904", "82598654137492", "82111470861232", "101355803904839", "103369820318730", "129249729676333", "87652966439602", "98128697330192", "94569400123709", "108542009792132", "131829119848102", "98794228258962", "84848623393188", "105376163872239", "130802932647826", "139492031192073", "120644962590316", "118737923041902", "96627428050713", "96244369908125", "83862224708780", "80293177331008", "79649109378991", "74972175454475" }
-
-ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollFrame.ScrollBarThickness = 6
 
 local function applyDecalToServer(decalId)
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -484,25 +548,25 @@ end
 
 for _, decalId in ipairs(decalIDs) do
     local itemFrame = Instance.new("Frame", ScrollFrame)
-    itemFrame.Size = UDim2.new(1, -10, 0, 50)
-    itemFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
-    itemFrame.BackgroundTransparency = 0.5; itemFrame.BorderSizePixel = 0
+    itemFrame.Size = UDim2.new(1, 0, 0, 48)
+    itemFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 22)
+    itemFrame.BackgroundTransparency = 0.4; itemFrame.BorderSizePixel = 0
     Instance.new("UICorner", itemFrame).CornerRadius = UDim.new(0, 6)
     
     local imgPreview = Instance.new("ImageLabel", itemFrame)
-    imgPreview.Size = UDim2.new(0, 40, 0, 40); imgPreview.Position = UDim2.new(0, 5, 0, 5)
+    imgPreview.Size = UDim2.new(0, 38, 0, 38); imgPreview.Position = UDim2.new(0, 5, 0, 5)
     imgPreview.Image = "rbxthumb://type=Asset&id=" .. decalId .. "&w=150&h=150"
     imgPreview.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     Instance.new("UICorner", imgPreview).CornerRadius = UDim.new(0, 4)
     
     local idText = Instance.new("TextLabel", itemFrame)
-    idText.Size = UDim2.new(0, 95, 0, 50); idText.Position = UDim2.new(0, 52, 0, 0)
+    idText.Size = UDim2.new(1, -115, 1, 0); idText.Position = UDim2.new(0, 50, 0, 0)
     idText.BackgroundTransparency = 1; idText.Text = decalId
     idText.TextColor3 = Color3.fromRGB(220, 220, 220)
-    idText.Font = Enum.Font.GothamSemibold; idText.TextSize = 10; idText.TextXAlignment = Enum.TextXAlignment.Left
+    idText.Font = Enum.Font.GothamSemibold; idText.TextSize = TEXT_SIZE; idText.TextXAlignment = Enum.TextXAlignment.Left
     
     local applyBtn = Instance.new("TextButton", itemFrame)
-    applyBtn.Size = UDim2.new(0, 50, 0, 26); applyBtn.Position = UDim2.new(1, -55, 0, 12)
+    applyBtn.Size = UDim2.new(0, 55, 0, 26); applyBtn.Position = UDim2.new(1, -60, 0, 11)
     applyBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 128); applyBtn.Text = "APPLY"
     applyBtn.TextColor3 = Color3.fromRGB(25, 25, 25); applyBtn.Font = Enum.Font.GothamBold; applyBtn.TextSize = 10
     Instance.new("UICorner", applyBtn).CornerRadius = UDim.new(0, 4)
@@ -518,40 +582,35 @@ CreateActionBtn("👤 Teleport Player", function()
         TpSearchBox.Text = "" 
         for _, child in ipairs(TpPlayerScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
         local allPlayers = Players:GetPlayers()
-        TpPlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #allPlayers * 55)
         for _, p in ipairs(allPlayers) do
             if p ~= LocalPlayer then
                 local itemFrame = Instance.new("Frame", TpPlayerScroll)
-                itemFrame.Size = UDim2.new(1, 0, 0, 50); itemFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 20)
-                itemFrame.BackgroundTransparency = 0.5; itemFrame.BorderSizePixel = 0
+                itemFrame.Size = UDim2.new(1, 0, 0, 48); itemFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 22)
+                itemFrame.BackgroundTransparency = 0.4; itemFrame.BorderSizePixel = 0
                 Instance.new("UICorner", itemFrame).CornerRadius = UDim.new(0, 6)
                 
                 local avatarImg = Instance.new("ImageLabel", itemFrame)
-                avatarImg.Size = UDim2.new(0, 40, 0, 40); avatarImg.Position = UDim2.new(0, 5, 0, 5)
+                avatarImg.Size = UDim2.new(0, 38, 0, 38); avatarImg.Position = UDim2.new(0, 5, 0, 5)
                 avatarImg.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
                 avatarImg.Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
                 Instance.new("UICorner", avatarImg).CornerRadius = UDim.new(0, 4)
                 
                 local nameText = Instance.new("TextLabel", itemFrame)
-                nameText.Name = "NameLabel"; nameText.Size = UDim2.new(0, 110, 0, 50); nameText.Position = UDim2.new(0, 50, 0, 0)
+                nameText.Name = "NameLabel"; nameText.Size = UDim2.new(1, -105, 1, 0); nameText.Position = UDim2.new(0, 48, 0, 0)
                 nameText.BackgroundTransparency = 1; nameText.Text = p.DisplayName .. "\n(@" .. p.Name .. ")"
                 nameText.TextColor3 = Color3.fromRGB(220, 220, 220); nameText.Font = Enum.Font.GothamSemibold
-                nameText.TextSize = 9; nameText.TextXAlignment = Enum.TextXAlignment.Left; nameText.TextTruncate = Enum.TextTruncate.AtEnd
+                nameText.TextSize = TEXT_SIZE - 1; nameText.TextXAlignment = Enum.TextXAlignment.Left; nameText.TextTruncate = Enum.TextTruncate.AtEnd
                 
                 local tpBtn = Instance.new("TextButton", itemFrame)
-                tpBtn.Size = UDim2.new(0, 45, 0, 26); tpBtn.Position = UDim2.new(1, -50, 0, 12)
+                tpBtn.Size = UDim2.new(0, 48, 0, 26); tpBtn.Position = UDim2.new(1, -53, 0, 11)
                 tpBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 128); tpBtn.Text = "GO"
                 tpBtn.TextColor3 = Color3.fromRGB(25, 25, 25); tpBtn.Font = Enum.Font.GothamBold; tpBtn.TextSize = 10
                 Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 4)
                 
                 tpBtn.MouseButton1Click:Connect(function()
                     pcall(function()
-                        if p.Character and p.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
-                            local char = LocalPlayer.Character
-                            if char:FindFirstChildOfClass("Humanoid") then char:FindFirstChildOfClass("Humanoid").Sit = false end
-                            if char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(0,0,0) end
-                            task.wait(0.05)
-                            char:PivotTo(p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0))
+                        if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                            SmartTeleport(p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0))
                         end
                     end)
                 end)
@@ -573,20 +632,19 @@ CreateActionBtn("👁️ View Player", function()
         ViewSearchBox.Text = "" 
         for _, child in ipairs(ViewPlayerScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
         local allPlayers = Players:GetPlayers()
-        ViewPlayerScroll.CanvasSize = UDim2.new(0, 0, 0, (#allPlayers + 1) * 55)
         
         local unviewFrame = Instance.new("Frame", ViewPlayerScroll)
-        unviewFrame.Size = UDim2.new(1, 0, 0, 50); unviewFrame.BackgroundColor3 = Color3.fromRGB(40, 20, 20)
+        unviewFrame.Size = UDim2.new(1, 0, 0, 48); unviewFrame.BackgroundColor3 = Color3.fromRGB(40, 20, 20)
         unviewFrame.BackgroundTransparency = 0.3; unviewFrame.BorderSizePixel = 0
         Instance.new("UICorner", unviewFrame).CornerRadius = UDim.new(0, 6)
         
         local unviewText = Instance.new("TextLabel", unviewFrame)
-        unviewText.Size = UDim2.new(0, 140, 0, 50); unviewText.Position = UDim2.new(0, 10, 0, 0)
+        unviewText.Size = UDim2.new(1, -65, 1, 0); unviewText.Position = UDim2.new(0, 10, 0, 0)
         unviewText.BackgroundTransparency = 1; unviewText.Text = "🛑 STOP VIEWING"
-        unviewText.TextColor3 = Color3.fromRGB(255, 100, 100); unviewText.Font = Enum.Font.GothamBold; unviewText.TextSize = 10; unviewText.TextXAlignment = Enum.TextXAlignment.Left
+        unviewText.TextColor3 = Color3.fromRGB(255, 100, 100); unviewText.Font = Enum.Font.GothamBold; unviewText.TextSize = TEXT_SIZE; unviewText.TextXAlignment = Enum.TextXAlignment.Left
         
         local unviewBtn = Instance.new("TextButton", unviewFrame)
-        unviewBtn.Size = UDim2.new(0, 50, 0, 26); unviewBtn.Position = UDim2.new(1, -55, 0, 12)
+        unviewBtn.Size = UDim2.new(0, 50, 0, 26); unviewBtn.Position = UDim2.new(1, -55, 0, 11)
         unviewBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50); unviewBtn.Text = "RESET"
         unviewBtn.TextColor3 = Color3.fromRGB(255, 255, 255); unviewBtn.Font = Enum.Font.GothamBold; unviewBtn.TextSize = 9
         Instance.new("UICorner", unviewBtn).CornerRadius = UDim.new(0, 4)
@@ -595,21 +653,21 @@ CreateActionBtn("👁️ View Player", function()
         for _, p in ipairs(allPlayers) do
             if p ~= LocalPlayer then
                 local itemFrame = Instance.new("Frame", ViewPlayerScroll)
-                itemFrame.Size = UDim2.new(1, 0, 0, 50); itemFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 20); itemFrame.BackgroundTransparency = 0.5; itemFrame.BorderSizePixel = 0
+                itemFrame.Size = UDim2.new(1, 0, 0, 48); itemFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 22); itemFrame.BackgroundTransparency = 0.4; itemFrame.BorderSizePixel = 0
                 Instance.new("UICorner", itemFrame).CornerRadius = UDim.new(0, 6)
                 
                 local avatarImg = Instance.new("ImageLabel", itemFrame)
-                avatarImg.Size = UDim2.new(0, 40, 0, 40); avatarImg.Position = UDim2.new(0, 5, 0, 5); avatarImg.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+                avatarImg.Size = UDim2.new(0, 38, 0, 38); avatarImg.Position = UDim2.new(0, 5, 0, 5); avatarImg.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
                 avatarImg.Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
                 Instance.new("UICorner", avatarImg).CornerRadius = UDim.new(0, 4)
                 
                 local nameText = Instance.new("TextLabel", itemFrame)
-                nameText.Name = "NameLabel"; nameText.Size = UDim2.new(0, 110, 0, 50); nameText.Position = UDim2.new(0, 50, 0, 0)
+                nameText.Name = "NameLabel"; nameText.Size = UDim2.new(1, -105, 1, 0); nameText.Position = UDim2.new(0, 48, 0, 0)
                 nameText.BackgroundTransparency = 1; nameText.Text = p.DisplayName .. "\n(@" .. p.Name .. ")"
-                nameText.TextColor3 = Color3.fromRGB(220, 220, 220); nameText.Font = Enum.Font.GothamSemibold; nameText.TextSize = 9; nameText.TextXAlignment = Enum.TextXAlignment.Left; nameText.TextTruncate = Enum.TextTruncate.AtEnd
+                nameText.TextColor3 = Color3.fromRGB(220, 220, 220); nameText.Font = Enum.Font.GothamSemibold; nameText.TextSize = TEXT_SIZE - 1; nameText.TextXAlignment = Enum.TextXAlignment.Left; nameText.TextTruncate = Enum.TextTruncate.AtEnd
                 
                 local viewBtn = Instance.new("TextButton", itemFrame)
-                viewBtn.Size = UDim2.new(0, 45, 0, 26); viewBtn.Position = UDim2.new(1, -50, 0, 12)
+                viewBtn.Size = UDim2.new(0, 48, 0, 26); viewBtn.Position = UDim2.new(1, -53, 0, 11)
                 viewBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 128); viewBtn.Text = "VIEW"
                 viewBtn.TextColor3 = Color3.fromRGB(25, 25, 25); viewBtn.Font = Enum.Font.GothamBold; viewBtn.TextSize = 9
                 Instance.new("UICorner", viewBtn).CornerRadius = UDim.new(0, 4)
@@ -639,40 +697,31 @@ CreateActionBtn("🗺️ Teleport Tempat", function()
     local newState = not TpMapFrame.Visible; CloseAllSubMenus(); TpMapFrame.Visible = newState
     if TpMapFrame.Visible then
         for _, child in ipairs(TpMapScroll:GetChildren()) do if child:IsA("Frame") then child:Destroy() end end
-        TpMapScroll.CanvasSize = UDim2.new(0, 0, 0, #customLocations * 45)
         for i, loc in ipairs(customLocations) do
             local itemFrame = Instance.new("Frame", TpMapScroll)
-            itemFrame.Size = UDim2.new(1, 0, 0, 40); itemFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 20); itemFrame.BackgroundTransparency = 0.5; itemFrame.BorderSizePixel = 0
+            itemFrame.Size = UDim2.new(1, 0, 0, 42); itemFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 22); itemFrame.BackgroundTransparency = 0.4; itemFrame.BorderSizePixel = 0
             Instance.new("UICorner", itemFrame).CornerRadius = UDim.new(0, 6)
             
             local nameText = Instance.new("TextLabel", itemFrame)
-            nameText.Size = UDim2.new(0, 140, 0, 40); nameText.Position = UDim2.new(0, 10, 0, 0)
+            nameText.Size = UDim2.new(1, -60, 1, 0); nameText.Position = UDim2.new(0, 10, 0, 0)
             nameText.BackgroundTransparency = 1; nameText.Text = i .. ". " .. loc.Name
-            nameText.TextColor3 = Color3.fromRGB(220, 220, 220); nameText.Font = Enum.Font.GothamSemibold; nameText.TextSize = 10; nameText.TextXAlignment = Enum.TextXAlignment.Left
+            nameText.TextColor3 = Color3.fromRGB(220, 220, 220); nameText.Font = Enum.Font.GothamSemibold; nameText.TextSize = TEXT_SIZE; nameText.TextXAlignment = Enum.TextXAlignment.Left
             
             local tpBtn = Instance.new("TextButton", itemFrame)
-            tpBtn.Size = UDim2.new(0, 45, 0, 26); tpBtn.Position = UDim2.new(1, -50, 0, 7)
+            tpBtn.Size = UDim2.new(0, 48, 0, 26); tpBtn.Position = UDim2.new(1, -53, 0, 8)
             tpBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 128); tpBtn.Text = "GO"
             tpBtn.TextColor3 = Color3.fromRGB(25, 25, 25); tpBtn.Font = Enum.Font.GothamBold; tpBtn.TextSize = 10
             Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 4)
             
             tpBtn.MouseButton1Click:Connect(function()
-                pcall(function()
-                    local char = LocalPlayer.Character
-                    if char then
-                        if char:FindFirstChildOfClass("Humanoid") then char:FindFirstChildOfClass("Humanoid").Sit = false end
-                        if char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(0,0,0) end
-                        task.wait(0.05)
-                        char:PivotTo(CFrame.new(loc.Pos))
-                    end
-                end)
+                SmartTeleport(CFrame.new(loc.Pos))
             end)
         end
     end
 end)
 
 -- ==========================================
--- 8️⃣ MENU: SCRIPT RUSUH PANEL (Fly / Cart Drive Logic Fixed)
+-- 8️⃣ MENU: SCRIPT RUSUH PANEL (Warna Hijau & Fix Scroll)
 -- ==========================================
 CreateActionBtn("💥 Script Rusuh", function()
     local newState = not RusuhFrame.Visible; CloseAllSubMenus(); RusuhFrame.Visible = newState
@@ -681,8 +730,8 @@ end)
 local function CreateRusuhToggle(name, onEnable, onDisable)
     local isActive = false
     local Btn = Instance.new("TextButton", RusuhScroll)
-    Btn.Size = UDim2.new(1, 0, 0, BTN_H + 4)
-    Btn.BackgroundColor3 = Color3.fromRGB(30, 35, 30); Btn.Text = name .. " [OFF]"
+    Btn.Size = UDim2.new(1, 0, 0, BTN_H + 2)
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 32, 28); Btn.Text = name .. " [OFF]"
     Btn.TextColor3 = Color3.fromRGB(200, 200, 200); Btn.Font = Enum.Font.GothamBold; Btn.TextSize = TEXT_SIZE
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
     local BtnStroke = Instance.new("UIStroke", Btn)
@@ -703,25 +752,25 @@ end
 
 local function CreateRusuhButton(name, callback)
     local Btn = Instance.new("TextButton", RusuhScroll)
-    Btn.Size = UDim2.new(1, 0, 0, BTN_H + 4)
-    Btn.BackgroundColor3 = Color3.fromRGB(40, 20, 20)
+    Btn.Size = UDim2.new(1, 0, 0, BTN_H + 2)
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 32, 28) 
     Btn.Text = name
-    Btn.TextColor3 = Color3.fromRGB(255, 100, 100)
+    Btn.TextColor3 = Color3.fromRGB(0, 255, 128) 
     Btn.Font = Enum.Font.GothamBold; Btn.TextSize = TEXT_SIZE
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
     local BtnStroke = Instance.new("UIStroke", Btn)
-    BtnStroke.Color = Color3.fromRGB(255, 100, 100); BtnStroke.Thickness = 1.5; BtnStroke.Transparency = 0.3
+    BtnStroke.Color = Color3.fromRGB(0, 255, 128); BtnStroke.Thickness = 1.5; BtnStroke.Transparency = 0.3
     Btn.MouseButton1Click:Connect(function()
         task.spawn(function()
             BtnStroke.Color = Color3.fromRGB(255, 255, 255); Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             task.wait(0.2)
-            BtnStroke.Color = Color3.fromRGB(255, 100, 100); Btn.TextColor3 = Color3.fromRGB(255, 100, 100)
+            BtnStroke.Color = Color3.fromRGB(0, 255, 128); Btn.TextColor3 = Color3.fromRGB(0, 255, 128)
         end)
         callback()
     end)
 end
 
--- [1] 🕊️ FLY & [2] 🛸 VEHICLE FLY (DENGAN LOGIKA CAMERA 3D MOBILE)
+-- [1] 🕊️ FLY & [2] 🛸 VEHICLE FLY
 local iyflyspeed, vehicleflyspeed = 10, 10
 local FLYING, flyKeyDown, flyKeyUp = false, nil, nil
 
@@ -739,6 +788,7 @@ local function sFLY(vfly)
     local CONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
     local lCONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
     local SPEED = 0
+    local curSpeed = vfly and vehicleflyspeed or iyflyspeed
 
     local function FLY()
         FLYING = true
@@ -755,22 +805,20 @@ local function sFLY(vfly)
                 if isMobile and humanoid then
                     local moveDir = humanoid.MoveDirection
                     if moveDir.Magnitude > 0 then
-                        -- Sistem Matematika Mobile 3D: Terjemahkan Joystick ke 3D Kamera
                         local camLookFlat = Vector3.new(camera.CFrame.LookVector.X, 0, camera.CFrame.LookVector.Z).Unit
                         local camRightFlat = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z).Unit
                         local forwardAmt = moveDir:Dot(camLookFlat)
                         local rightAmt = moveDir:Dot(camRightFlat)
-                        
                         local finalVec = (camera.CFrame.LookVector * forwardAmt) + (camera.CFrame.RightVector * rightAmt)
                         
-                        SPEED = 50
+                        SPEED = curSpeed
                         BV.Velocity = finalVec.Unit * SPEED
                         BG.CFrame = camera.CFrame
                         continue
                     end
                 end
 
-                if CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0 then SPEED = 50
+                if CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0 then SPEED = curSpeed
                 elseif not (CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0) and SPEED ~= 0 then SPEED = 0 end
 
                 if (CONTROL.L + CONTROL.R) ~= 0 or (CONTROL.F + CONTROL.B) ~= 0 or (CONTROL.Q + CONTROL.E) ~= 0 then
@@ -789,7 +837,6 @@ local function sFLY(vfly)
         end)
     end
 
-    local curSpeed = vfly and vehicleflyspeed or iyflyspeed
     flyKeyDown = UserInputService.InputBegan:Connect(function(input, proc)
         if proc then return end
         if input.KeyCode == Enum.KeyCode.W then CONTROL.F = curSpeed elseif input.KeyCode == Enum.KeyCode.S then CONTROL.B = -curSpeed elseif input.KeyCode == Enum.KeyCode.A then CONTROL.L = -curSpeed elseif input.KeyCode == Enum.KeyCode.D then CONTROL.R = curSpeed elseif input.KeyCode == Enum.KeyCode.E then CONTROL.Q = curSpeed * 2 elseif input.KeyCode == Enum.KeyCode.Q then CONTROL.E = -curSpeed * 2 end
@@ -811,7 +858,7 @@ end
 CreateRusuhToggle("🕊️ Fly", function() sFLY(false) end, function() NOFLY() end)
 CreateRusuhToggle("🛸 Vehicle Fly", function() sFLY(true) end, function() NOFLY() end)
 
--- [3] 🛒 CART DRIVE (UNIVERSAL HOVER)
+-- [3] 🛒 CART DRIVE (UNIVERSAL HOVER DENGAN FIX KAKI TENGGELAM)
 local speed, cartTarget, cartBV, cartBG, cartConn = 50, nil, nil, nil, nil
 local currentVel, isHoveringPlayer = Vector3.zero, false
 
@@ -825,7 +872,6 @@ local function getCart()
         local seat = hum.SeatPart
         return seat.AssemblyRootPart or (seat.Parent:IsA("Model") and seat.Parent.PrimaryPart) or seat
     end
-    -- Fallback ke Karakter Player (Jadi Universal Fly!)
     if hrp then return hrp end
     return nil
 end
@@ -834,7 +880,13 @@ local function stopCartDrive()
     if cartConn then cartConn:Disconnect() cartConn = nil end
     if cartBV then cartBV:Destroy() cartBV = nil end
     if cartBG then cartBG:Destroy() cartBG = nil end
-    if isHoveringPlayer then pcall(function() LocalPlayer.Character.Humanoid.PlatformStand = false end); isHoveringPlayer = false end
+    if isHoveringPlayer then 
+        pcall(function() 
+            LocalPlayer.Character.Humanoid.PlatformStand = false 
+            LocalPlayer.Character:PivotTo(LocalPlayer.Character:GetPivot() * CFrame.new(0, 2, 0))
+        end)
+        isHoveringPlayer = false 
+    end
     cartTarget = nil; currentVel = Vector3.zero
 end
 
@@ -845,7 +897,13 @@ local function startCartDrive()
 
     pcall(function() cartTarget.Anchored = false end)
     isHoveringPlayer = (cartTarget.Name == "HumanoidRootPart")
-    if isHoveringPlayer then pcall(function() LocalPlayer.Character.Humanoid.PlatformStand = true end) end
+    
+    if isHoveringPlayer then 
+        pcall(function() 
+            LocalPlayer.Character.Humanoid.PlatformStand = true 
+            LocalPlayer.Character:PivotTo(LocalPlayer.Character:GetPivot() * CFrame.new(0, 3, 0))
+        end) 
+    end
 
     cartBV = Instance.new("BodyVelocity"); cartBV.MaxForce = Vector3.new(math.huge, 0, math.huge); cartBV.Velocity = Vector3.zero; cartBV.Parent = cartTarget
     cartBG = Instance.new("BodyGyro"); cartBG.MaxTorque = Vector3.new(math.huge, math.huge, math.huge); cartBG.P = 8000; cartBG.D = 1000; cartBG.CFrame = cartTarget.CFrame; cartBG.Parent = cartTarget
@@ -957,16 +1015,44 @@ end, function()
     end)
 end)
 
--- [6] 🛡️ ANTI-FLING
-local antifling
+-- [6] 🛡️ ANTI-FLING (SISTEM PROTEKSI GANDA KEBAL TOTAL)
+local antiFlingConn1, antiFlingConn2
 CreateRusuhToggle("🛡️ Anti-Fling", function()
-    if antifling then antifling:Disconnect() end
-    antifling = RunService.Stepped:Connect(function()
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then for _, v in pairs(p.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end end
+    if antiFlingConn1 then antiFlingConn1:Disconnect() end
+    if antiFlingConn2 then antiFlingConn2:Disconnect() end
+
+    antiFlingConn1 = RunService.Stepped:Connect(function()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                for _, v in ipairs(p.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = false
+                        v.AssemblyLinearVelocity = Vector3.zero
+                        v.AssemblyAngularVelocity = Vector3.zero
+                    end
+                end
+            end
         end
     end)
-end, function() if antifling then antifling:Disconnect() antifling = nil end end)
+
+    antiFlingConn2 = RunService.Heartbeat:Connect(function()
+        local char = LocalPlayer.Character
+        if char then
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                if hrp.AssemblyLinearVelocity.Magnitude > 100 then
+                    hrp.AssemblyLinearVelocity = Vector3.zero
+                end
+                if hrp.AssemblyAngularVelocity.Magnitude > 100 then
+                    hrp.AssemblyAngularVelocity = Vector3.zero
+                end
+            end
+        end
+    end)
+end, function()
+    if antiFlingConn1 then antiFlingConn1:Disconnect(); antiFlingConn1 = nil end
+    if antiFlingConn2 then antiFlingConn2:Disconnect(); antiFlingConn2 = nil end
+end)
 
 -- [7] 👻 INVISIBLE (STABIL, -25 STUDS, ANTI HILANG GUI)
 local invisibleActive, realCharacter, fakeCharacter, invisConnection, fakeCharDied = false, nil, nil, nil, nil
@@ -997,7 +1083,6 @@ CreateRusuhToggle("👻 Invisible (Ghost)", function()
     realCharacter = LocalPlayer.Character
     if not realCharacter or not realCharacter:FindFirstChild("HumanoidRootPart") then invisibleActive = false return end
     
-    -- SYSTEM ANTI-WIPE: Mencegah hilangnya GUI
     for _, gui in pairs(LocalPlayer:WaitForChild("PlayerGui"):GetChildren()) do
         if gui:IsA("ScreenGui") then gui.ResetOnSpawn = false end
     end
@@ -1029,7 +1114,6 @@ CreateRusuhToggle("👻 Invisible (Ghost)", function()
                 for _, v in pairs(realCharacter:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end
                 if realCharacter:FindFirstChildOfClass("Humanoid") then realCharacter:FindFirstChildOfClass("Humanoid").PlatformStand = true end
                 
-                -- DIBAWAH KE DALAMAN 25 STUDS SEPERTI REQUEST!
                 realHRP.CFrame = fakeHRP.CFrame * CFrame.new(0, -25, 0)
                 realHRP.Velocity = Vector3.zero
             end
@@ -1045,15 +1129,12 @@ CreateRusuhToggle("🖱️ Click / Tap TP", function()
     if isMobile then
         tpTool = Instance.new("Tool"); tpTool.Name = "🖱️ Mobile TP"; tpTool.RequiresHandle = false; tpTool.Parent = LocalPlayer.Backpack
         clickTpConn = tpTool.Activated:Connect(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then LocalPlayer.Character:PivotTo(mouse.Hit * CFrame.new(0, 3, 0)) end
+            if mouse.Hit then SmartTeleport(mouse.Hit * CFrame.new(0, 3, 0)) end
         end)
     else
         clickTpConn = mouse.Button1Down:Connect(function()
-            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) and mouse.Hit and LocalPlayer.Character then
-                local char = LocalPlayer.Character
-                if char:FindFirstChildOfClass("Humanoid") then char:FindFirstChildOfClass("Humanoid").Sit = false end
-                if char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero end
-                char:PivotTo(mouse.Hit * CFrame.new(0, 3, 0))
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) and mouse.Hit then
+                SmartTeleport(mouse.Hit * CFrame.new(0, 3, 0))
             end
         end)
     end
@@ -1065,7 +1146,7 @@ end)
 -- [9] 🔍 INFINITE ZOOM
 CreateRusuhToggle("🔍 Infinite Zoom", function() pcall(function() LocalPlayer.CameraMaxZoomDistance = 999999 end) end, function() pcall(function() LocalPlayer.CameraMaxZoomDistance = 400 end) end)
 
--- [10] 🗑️ DELETE PREMIUM (NEW FEATURE)
+-- [10] 🗑️ DELETE PREMIUM (TEMA HIJAU)
 CreateRusuhButton("🗑️ Delete Premium", function()
     local toDelete = {
         workspace:FindFirstChild("Border") and workspace.Border:FindFirstChild("Garden") and workspace.Border.Garden:FindFirstChild("PremiumDetection"),
@@ -1081,7 +1162,6 @@ CreateRusuhButton("🗑️ Delete Premium", function()
         if obj then pcall(function() obj:Destroy() end) end
     end
     
-    -- Deep scan untuk sisa-sisa Premium / Gamepass lainnya
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj.Name == "PremiumDetection" or obj.Name == "GP Canopy" or obj.Name == "Gamepass" then
             pcall(function() obj:Destroy() end)
@@ -1161,7 +1241,7 @@ end, function() speedActive = false; pcall(function() LocalPlayer.Character.Huma
 -- [18] 👁️ ESP PLAYERS
 local espActive, espElements = false, {}
 CreateRusuhToggle("👁️ ESP Players", function()
-    espActive = true; ESPenabled = true
+    espActive = true
     task.spawn(function()
         while espActive do
             pcall(function()
@@ -1197,7 +1277,7 @@ CreateRusuhToggle("👁️ ESP Players", function()
         end
     end)
 end, function()
-    espActive = false; ESPenabled = false
+    espActive = false
     for _, elem in ipairs(espElements) do if elem then elem:Destroy() end end
     table.clear(espElements)
     for _, p in ipairs(Players:GetPlayers()) do
@@ -1216,12 +1296,12 @@ CreateRusuhToggle("🕵️ Load SimpleSpy", function() pcall(function() loadstri
 -- ==========================================
 -- 9️⃣ TOMBOL: LIKE & DISLIKE ALL (DUAL SPLIT BUTTON)
 -- ==========================================
-local DualVoteFrame = Instance.new("Frame", Container)
+local DualVoteFrame = Instance.new("Frame", ContainerScroll)
 DualVoteFrame.Size = UDim2.new(1, 0, 0, BTN_H); DualVoteFrame.BackgroundTransparency = 1
 
 local LikeBtn = Instance.new("TextButton", DualVoteFrame)
 LikeBtn.Size = UDim2.new(0.48, 0, 1, 0); LikeBtn.Position = UDim2.new(0, 0, 0, 0)
-LikeBtn.BackgroundColor3 = Color3.fromRGB(30, 45, 30); LikeBtn.Text = "👍 Like All"
+LikeBtn.BackgroundColor3 = Color3.fromRGB(25, 40, 28); LikeBtn.Text = "👍 Like All"
 LikeBtn.TextColor3 = Color3.fromRGB(255, 255, 255); LikeBtn.Font = Enum.Font.GothamBold; LikeBtn.TextSize = TEXT_SIZE
 Instance.new("UICorner", LikeBtn).CornerRadius = UDim.new(0, 6)
 local LikeStroke = Instance.new("UIStroke", LikeBtn); LikeStroke.Color = Color3.fromRGB(46, 204, 113); LikeStroke.Thickness = 1.5
@@ -1236,7 +1316,7 @@ end)
 
 local DislikeBtn = Instance.new("TextButton", DualVoteFrame)
 DislikeBtn.Size = UDim2.new(0.48, 0, 1, 0); DislikeBtn.Position = UDim2.new(0.52, 0, 0, 0)
-DislikeBtn.BackgroundColor3 = Color3.fromRGB(45, 30, 30); DislikeBtn.Text = "👎 Dislike All"
+DislikeBtn.BackgroundColor3 = Color3.fromRGB(40, 25, 28); DislikeBtn.Text = "👎 Dislike All"
 DislikeBtn.TextColor3 = Color3.fromRGB(255, 255, 255); DislikeBtn.Font = Enum.Font.GothamBold; DislikeBtn.TextSize = TEXT_SIZE
 Instance.new("UICorner", DislikeBtn).CornerRadius = UDim.new(0, 6)
 local DislikeStroke = Instance.new("UIStroke", DislikeBtn); DislikeStroke.Color = Color3.fromRGB(231, 76, 60); DislikeStroke.Thickness = 1.5
