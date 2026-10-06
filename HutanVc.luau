@@ -1,5 +1,26 @@
+local player = game.Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+local whitelistURL = "https://raw.githubusercontent.com/Tituss22/ScriptPrivate/main/whitelist.json"
+local success, result = pcall(function()
+    return game:HttpGet(whitelistURL)
+end)
+
+if success then
+    local whitelistData = HttpService:JSONDecode(result)
+    if not whitelistData[player.Name] then
+        if setclipboard then setclipboard('bintanganggara22._') end
+        player:Kick("Script Berbayar! Beli di Discord: bintanganggara22._ (Username otomatis di-copy)")
+        return
+    end
+else
+    player:Kick("Gagal mengecek whitelist. Coba lagi nanti atau cek koneksi internet.")
+    return
+end
+
+print("Akses Diterima. Selamat datang, " .. player.Name .. "!")
+
 -- ====================================================================
--- 🌲 HUTAN VOICE CHAT - MINI PREMIUM HUB (V24 - UNDERGROUND INVISIBLE)
+-- 🌲 HUTAN VOICE CHAT - MINI PREMIUM HUB (V26 - CLEAN UI PC & MOBILE)
 -- ====================================================================
 
 local CoreGui = game:GetService("CoreGui")
@@ -10,10 +31,12 @@ local Workspace = game:GetService("Workspace")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local guiName = "HutanVC_MiniHub"
+
+-- Deteksi Perangkat (PC atau HP)
+local isMobile = UserInputService.TouchEnabled
 
 -- Variabel Global Pendukung
 local networkPaused
@@ -23,8 +46,7 @@ local camera = Workspace.CurrentCamera
 -- 🔄 SISTEM AUTO REJOIN CHAT (!rejoin) & QUEUE ON TELEPORT
 -- ==========================================
 local queue_on_teleport = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport)
-
-local AutoExecuteURL = "" 
+local AutoExecuteURL = "https://raw.githubusercontent.com/Tituss22/ScriptPrivate/refs/heads/main/HutanVc.luau" 
 
 LocalPlayer.Chatted:Connect(function(msg)
     if string.lower(msg) == "!rejoin" then
@@ -44,7 +66,7 @@ pcall(function()
 end)
 
 -- ==========================================
--- 💾 SISTEM CACHE GUI (MENGINGAT POSISI & STATUS VISIBILITY)
+-- 💾 SISTEM CACHE GUI & DRAGGING SUPPORT HP/PC
 -- ==========================================
 local CacheFileName = "HutanVC_Cache.json"
 local guiCache = {
@@ -69,16 +91,49 @@ pcall(function()
     end
 end)
 
+-- Fungsi Custom Dragging (Lancar untuk Touchscreen dan Mouse)
+local function MakeDraggable(topbarobject, object)
+    local Dragging = false
+    local DragInput = nil
+    local DragStart = nil
+    local StartPosition = nil
+
+    topbarobject.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = true
+            DragStart = input.Position
+            StartPosition = object.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    Dragging = false
+                end
+            end)
+        end
+    end)
+
+    topbarobject.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            DragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == DragInput and Dragging then
+            local delta = input.Position - DragStart
+            object.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + delta.Y)
+        end
+    end)
+end
+
 -- ==========================================
--- 🎨 SETUP TAMPILAN UTAMA (DARK GLASS)
+-- 🎨 SETUP TAMPILAN UTAMA
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = guiName
 ScreenGui.ResetOnSpawn = false
 pcall(function() ScreenGui.Parent = CoreGui end)
 if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
-
-ScreenGui.Enabled = guiCache.Visible
 
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 200, 0, 420) 
@@ -87,14 +142,35 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(10, 15, 12)
 MainFrame.BackgroundTransparency = 0.15 
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-MainFrame.Draggable = true
+MainFrame.Visible = guiCache.Visible
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+MakeDraggable(MainFrame, MainFrame) -- Apply Custom Dragging
+
+-- 📱 Tombol Toggle Khusus HP (Dibuat HANYA jika device = Mobile)
+if isMobile then
+    local ToggleBtn = Instance.new("TextButton", ScreenGui)
+    ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
+    ToggleBtn.Position = UDim2.new(0, 15, 0, 15)
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(10, 15, 12)
+    ToggleBtn.BackgroundTransparency = 0.2
+    ToggleBtn.Text = "🌲"
+    ToggleBtn.TextSize = 25
+    ToggleBtn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
+    Instance.new("UIStroke", ToggleBtn).Color = Color3.fromRGB(0, 255, 128)
+    Instance.new("UIStroke", ToggleBtn).Thickness = 2
+    MakeDraggable(ToggleBtn, ToggleBtn)
+
+    ToggleBtn.MouseButton1Click:Connect(function()
+        MainFrame.Visible = not MainFrame.Visible
+    end)
+end
 
 local function SaveCache()
     pcall(function()
         if writefile then
             local data = {
-                Visible = ScreenGui.Enabled,
+                Visible = MainFrame.Visible,
                 PosX = MainFrame.Position.X.Scale,
                 OffsetX = MainFrame.Position.X.Offset,
                 PosY = MainFrame.Position.Y.Scale,
@@ -129,7 +205,7 @@ local F2Hint = Instance.new("TextLabel", MainFrame)
 F2Hint.Size = UDim2.new(1, 0, 0, 15)
 F2Hint.Position = UDim2.new(0, 0, 0, 25)
 F2Hint.BackgroundTransparency = 1
-F2Hint.Text = "[ Tekan F2 untuk Hide/Show ]"
+F2Hint.Text = isMobile and "[ Tap Logo 🌲 untuk Hide ]" or "[ Tekan F2 untuk Hide/Show ]"
 F2Hint.TextColor3 = Color3.fromRGB(150, 150, 150)
 F2Hint.Font = Enum.Font.GothamSemibold
 F2Hint.TextSize = 10
@@ -309,7 +385,7 @@ TpMapStroke.Transparency = 0.2
 local TpMapTitle = Instance.new("TextLabel", TpMapFrame)
 TpMapTitle.Size = UDim2.new(1, 0, 0, 40)
 TpMapTitle.BackgroundTransparency = 1
-TpMapTitle.Text = "🗺️️ TELEPORT TEMPAT (SCAN)"
+TpMapTitle.Text = "🗺 TELEPORT TEMPAT (SCAN)"
 TpMapTitle.TextColor3 = Color3.fromRGB(0, 255, 128)
 TpMapTitle.Font = Enum.Font.GothamBlack
 TpMapTitle.TextSize = 13
@@ -361,14 +437,16 @@ local RusuhListLayout = Instance.new("UIListLayout", RusuhScroll)
 RusuhListLayout.Padding = UDim.new(0, 6)
 
 -- ==========================================
--- ⌨️ SISTEM HOTKEY F2 
+-- ⌨️ SISTEM HOTKEY F2 (PC SAJA)
 -- ==========================================
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == Enum.KeyCode.F2 then
-        ScreenGui.Enabled = not ScreenGui.Enabled
-        SaveCache()
-    end
-end)
+if not isMobile then
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.F2 then
+            MainFrame.Visible = not MainFrame.Visible
+            SaveCache()
+        end
+    end)
+end
 
 -- ==========================================
 -- 🛠️ FUNGSI BANTUAN DASAR & IY UTILS
@@ -513,9 +591,9 @@ CreateToggle("🛒 Auto Wheelbarrow", function(state)
                                         humanoid:Sit(seat)
                                         task.wait(0.2)
                                         humanoid.Jump = true
-                                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+                                        if not isMobile then VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game) end
                                         task.wait(0.05)
-                                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+                                        if not isMobile then VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game) end
                                         task.wait(0.15)
                                         rootPart.CFrame = savedCFrame
                                         rootPart.AssemblyLinearVelocity = Vector3.new(0,0,0)
@@ -1060,6 +1138,17 @@ local function sFLY(vfly)
                     humanoid.PlatformStand = true
                 end
 
+                -- Integrasi Mobile (Membaca Analog/Thumbstick)
+                if isMobile and humanoid then
+                    local moveDir = humanoid.MoveDirection
+                    if moveDir.Magnitude > 0 then
+                        SPEED = 50
+                        BV.Velocity = moveDir * SPEED
+                        BG.CFrame = camera.CFrame
+                        continue
+                    end
+                end
+
                 if CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0 then
                     SPEED = 50
                 elseif not (CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0) and SPEED ~= 0 then
@@ -1199,10 +1288,16 @@ local function startCartDrive()
         if camRight.Magnitude > 0 then camRight = camRight.Unit end
 
         local moveDir = Vector3.zero
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camLook end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camLook end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camRight end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camRight end
+        
+        -- Support Mobile Thumbstick Analog
+        if isMobile and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            moveDir = LocalPlayer.Character.Humanoid.MoveDirection
+        else
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camLook end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camLook end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camRight end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camRight end
+        end
 
         local targetVel = (moveDir.Magnitude > 0) and (moveDir.Unit * speed) or Vector3.zero
         currentVel = currentVel:Lerp(targetVel, math.min(dt * 4, 1))
@@ -1391,20 +1486,17 @@ CreateRusuhToggle("👻 Invisible (Ghost)", function()
         return
     end
     
-    -- Clone karakter untuk visual dummy di atas tanah
     realCharacter.Archivable = true
     fakeCharacter = realCharacter:Clone()
     fakeCharacter.Name = LocalPlayer.Name .. "_Fake"
     fakeCharacter.Parent = workspace
     
-    -- Buat dummy memudar (50% transparansi)
     for _, v in pairs(fakeCharacter:GetDescendants()) do
         if (v:IsA("BasePart") or v:IsA("Decal")) and v.Name ~= "HumanoidRootPart" then
             v.Transparency = 0.5
         end
     end
     
-    -- Sembunyikan sepenuhnya karakter asli & rekam nilai transparansi awalnya
     originalTransparencies = {}
     for _, v in pairs(realCharacter:GetDescendants()) do
         if v:IsA("BasePart") or v:IsA("Decal") then
@@ -1415,7 +1507,6 @@ CreateRusuhToggle("👻 Invisible (Ghost)", function()
         end
     end
     
-    -- Overwrite kontrol lokal ke fake character
     LocalPlayer.Character = fakeCharacter
     workspace.CurrentCamera.CameraSubject = fakeCharacter:FindFirstChildOfClass("Humanoid")
     
@@ -1426,7 +1517,6 @@ CreateRusuhToggle("👻 Invisible (Ghost)", function()
         end)
     end
     
-    -- Loop Stepped untuk membawa karakter asli ke bawah tanah persis di bawah dummy
     invisConnection = RunService.Stepped:Connect(function()
         if invisibleActive and realCharacter and realCharacter.Parent and fakeCharacter and fakeCharacter.Parent then
             local realHRP = realCharacter:FindFirstChild("HumanoidRootPart")
@@ -1439,21 +1529,18 @@ CreateRusuhToggle("👻 Invisible (Ghost)", function()
                 end
                 local realHum = realCharacter:FindFirstChildOfClass("Humanoid")
                 if realHum then
-                    realHum.PlatformStand = true -- Mencegah freefall
+                    realHum.PlatformStand = true
                 end
                 
-                -- Offset Y = -15 (Aman di bawah lantai tapi suara VC tetap nyampe)
                 realHRP.CFrame = fakeHRP.CFrame * CFrame.new(0, -15, 0)
                 realHRP.Velocity = Vector3.zero
             end
         else
-            -- Jika salah satu hilang (reset, dll) kembalikan sistem normal
             if invisibleActive then stopInvisible() end
         end
     end)
     
 end, function()
-    -- Fungsi stop dipanggil saat tombol di-OFF
     if not invisibleActive then return end
     invisibleActive = false
     
@@ -1464,11 +1551,9 @@ end, function()
         local realHRP = realCharacter:FindFirstChild("HumanoidRootPart")
         local fakeHRP = fakeCharacter:FindFirstChild("HumanoidRootPart")
         if realHRP and fakeHRP then
-            -- MUNCUL OTOMATIS: Angkat karakter asli kembali ke atas (posisi terakhir dummy)
             realHRP.CFrame = fakeHRP.CFrame
         end
         
-        -- Kembalikan transparansi karakter asli
         for v, orig in pairs(originalTransparencies) do
             if v and v.Parent then
                 v.Transparency = orig
@@ -1486,7 +1571,6 @@ end, function()
         fakeCharacter = nil
     end
     
-    -- Kembalikan kontrol player ke karakter asli
     LocalPlayer.Character = realCharacter
     if realCharacter then
         workspace.CurrentCamera.CameraSubject = realCharacter:FindFirstChildOfClass("Humanoid")
@@ -1494,26 +1578,44 @@ end, function()
     originalTransparencies = {}
 end)
 
--- [8] 🖱️ CTRL + CLICK TP (INSTANT SNAP)
+-- [8] 🖱️ CTRL + CLICK TP (INSTANT SNAP) / HP TAP TP
 local clickTpConn
+local tpTool
 local mouse = LocalPlayer:GetMouse()
-CreateRusuhToggle("🖱️ Ctrl + Click TP", function()
-    clickTpConn = mouse.Button1Down:Connect(function()
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) and mouse.Hit then
+CreateRusuhToggle("🖱️ Click / Tap TP", function()
+    if isMobile then
+        -- Sistem Khusus HP: Memberikan Tool untuk tap layar
+        tpTool = Instance.new("Tool")
+        tpTool.Name = "🖱️ Mobile TP"
+        tpTool.RequiresHandle = false
+        tpTool.Parent = LocalPlayer.Backpack
+        clickTpConn = tpTool.Activated:Connect(function()
+            local mouseHit = mouse.Hit
             local char = LocalPlayer.Character
-            if char then
-                local hum = char:FindFirstChildOfClass("Humanoid")
-                if hum then hum.Sit = false end
-                local root = char:FindFirstChild("HumanoidRootPart")
-                if root then
-                    root.AssemblyLinearVelocity = Vector3.zero
-                end
-                char:PivotTo(mouse.Hit * CFrame.new(0, 3, 0))
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char:PivotTo(mouseHit * CFrame.new(0, 3, 0))
             end
-        end
-    end)
+        end)
+    else
+        -- Sistem Khusus PC: Ctrl + Click
+        clickTpConn = mouse.Button1Down:Connect(function()
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) and mouse.Hit then
+                local char = LocalPlayer.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then hum.Sit = false end
+                    local root = char:FindFirstChild("HumanoidRootPart")
+                    if root then
+                        root.AssemblyLinearVelocity = Vector3.zero
+                    end
+                    char:PivotTo(mouse.Hit * CFrame.new(0, 3, 0))
+                end
+            end
+        end)
+    end
 end, function()
     if clickTpConn then clickTpConn:Disconnect() end
+    if tpTool then tpTool:Destroy() tpTool = nil end
 end)
 
 -- [9] 🔍 INFINITE ZOOM
